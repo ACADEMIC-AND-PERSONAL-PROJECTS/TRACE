@@ -1,0 +1,20 @@
+services:
+  memory-db:
+    image: postgres:17-alpine
+    container_name: memory-db
+    environment:
+      POSTGRES_DB: memory_db
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: dev
+    ports:
+      - "9002:5432"
+    volumes:
+      - memory_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U dev -d memory_db" ]
+      interval: 10s
+      timeout: 30s
+      retries: 5
+
+volumes:
+  memory_data:
