@@ -2,13 +2,14 @@ package me.khadimprojects.api.models.entities;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "messages")
 @Data
+@AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class Message {
     @Id @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;

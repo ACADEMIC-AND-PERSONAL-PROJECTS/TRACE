@@ -2,9 +2,7 @@ package me.khadimprojects.api.models.entities;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -13,7 +11,9 @@ import java.util.List;
 @Entity
 @Table(name = "conversations")
 @Data
+@AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class Conversation {
     @Id
     private String id;
