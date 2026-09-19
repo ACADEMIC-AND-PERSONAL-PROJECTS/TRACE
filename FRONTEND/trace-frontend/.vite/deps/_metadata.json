@@ -1,0 +1,44 @@
+{
+  "hash": "07046ab8",
+  "configHash": "ed934ad3",
+  "lockfileHash": "ee65488e",
+  "browserHash": "17eb0b0d",
+  "optimized": {
+    "lucide-react": {
+      "src": "../../node_modules/lucide-react/dist/esm/lucide-react.mjs",
+      "file": "lucide-react.js",
+      "fileHash": "3080bea9",
+      "needsInterop": false
+    },
+    "motion/react": {
+      "src": "../../node_modules/motion/dist/es/react.mjs",
+      "file": "motion_react.js",
+      "fileHash": "835d026d",
+      "needsInterop": false
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "90db3fbe",
+      "needsInterop": true
+    },
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "e78b8710",
+      "needsInterop": true
+    },
+    "react/jsx-dev-runtime": {
+      "src": "../../node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "efddc52f",
+      "needsInterop": true
+    }
+  },
+  "chunks": {
+    "rolldown-runtime-DC62tzP2": {
+      "file": "rolldown-runtime-DC62tzP2.js",
+      "isDynamicEntry": false
+    }
+  }
+}
