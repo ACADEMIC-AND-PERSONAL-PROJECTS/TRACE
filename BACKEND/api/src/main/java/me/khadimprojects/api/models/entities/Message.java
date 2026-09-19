@@ -19,6 +19,9 @@ public class Message {
     @Column(nullable = false)
     private String conversationId;
 
+    @Enumerated
+    private Enum<Role> role;
+
     @ManyToOne
     @JoinColumn(name = "conversation_id")
     @JsonBackReference

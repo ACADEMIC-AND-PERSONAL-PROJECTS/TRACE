@@ -21,7 +21,7 @@ public class Conversation {
     @CreationTimestamp
     private LocalDateTime timestamp;
 
-    @OneToMany(mappedBy = "conversation")
+    @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL)
     @JsonManagedReference
     private List<Message> messages;
 

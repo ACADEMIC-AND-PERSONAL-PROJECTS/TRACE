@@ -1,31 +1,105 @@
 package me.khadimprojects.api.services;
 
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.model.openaiofficial.OpenAiOfficialChatModel;
 import lombok.RequiredArgsConstructor;
 import me.khadimprojects.api.models.dto.ConversationRequest;
 import me.khadimprojects.api.models.dto.ConversationResponse;
 import me.khadimprojects.api.models.entities.Conversation;
 import me.khadimprojects.api.models.entities.Message;
+import me.khadimprojects.api.models.entities.Role;
 import me.khadimprojects.api.repositories.ConversationRepository;
 import me.khadimprojects.api.repositories.MessageRepository;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class ConversationService {
+
+    // Dependancies injected
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
+    private final OpenAiOfficialChatModel chatModel;
+
+    // Max context limit
+    private static final int MAX_MESSAGES = 30;
 
     // chat management
     public ConversationResponse chat(String content, String conversationId) {
+
+        // global id
+        String globalConversationId = null;
+
+        // Create a conversation
         if (conversationId.isEmpty()) {
+
+            // Generate a new conversation id
             String id = generateConversationId();
-            ConversationRequest conversation = ConversationRequest.builder()
-                    .conversationId(id)
-                    .content(content)
+
+            Conversation conversation = Conversation.builder()
+                    .id(id)
+                    .messages(null)
                     .build();
+
+            Message message = Message.builder()
+                    .conversationId(id)
+                    .conversation(conversation)
+                    .content(content)
+                    .role(Role.USER)
+                    .build();
+
+            conversation.setMessages(List.of(message));
+
+            // Create the conversation in the database
+            Conversation sevedConversation = conversationRepository.save(conversation);
+
+            globalConversationId = id;
+
+        } else {
+            // Save the message if the conversation id already exist
+            messageRepository.save(Message.builder()
+                            .conversationId(conversationId)
+                            .role(Role.USER)
+                            .content(content)
+                    .build());
         }
+
+        // Determine the ID of the conversation
+        globalConversationId = globalConversationId != null ? globalConversationId : conversationId;
+
+        // Retrieve history
+        List<Message> history = messageRepository.findAllByConversationId(
+                globalConversationId, PageRequest.of(0, MAX_MESSAGES, Sort.by(Sort.Direction.DESC, "id"))
+        ).reversed();
+
+        // Convert into a ChatMessage
+        List<ChatMessage> context = history.stream().map(message -> {
+            if (message.getRole().equals(Role.USER)) return UserMessage.from(message.getContent());
+            return AiMessage.from(message.getContent());
+        }).toList();
+
+        // Send To LLM
+        AiMessage aiMessage = chatModel.chat(context).aiMessage();
+
+        // Save that response into the database
+        messageRepository.save(Message.builder()
+                .role(Role.AGENT)
+                .conversationId(globalConversationId)
+                .content(aiMessage.text())
+                .build()
+        );
+
+        // Return the response
+        return toConversationResponse(aiMessage.text(), globalConversationId);
+
     }
 
     // Generate a conversationId
@@ -35,9 +109,27 @@ public class ConversationService {
 
     // Parse a conversation dto into a conversation entity
     private Conversation toConversation(ConversationRequest request) {
-        Message message = Message.builder()
-                .conversationId()
-                .build()
+        Optional<Conversation> conversationHistory = conversationRepository.findById(request.conversationId());
+        if (conversationHistory.isPresent()){
+            Message message = Message.builder()
+                    .conversationId(conversationHistory.get().getId())
+                    .content(request.content())
+                    .build();
+
+            return Conversation.builder()
+                    .id(request.conversationId())
+                    .messages(List.of(message))
+                    .build();
+        }
+        throw new RuntimeException("Unable to find that conversation");
+    }
+
+    // Parse the response into a conversation reponse dto
+    private ConversationResponse toConversationResponse(String response, String id) {
+        return ConversationResponse.builder()
+                .aiResponse(response)
+                .conversationId(id)
+                .build();
     }
 
 }
