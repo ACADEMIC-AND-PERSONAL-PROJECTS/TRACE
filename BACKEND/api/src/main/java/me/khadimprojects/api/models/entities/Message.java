@@ -14,13 +14,11 @@ public class Message {
     @Id @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    @Column(columnDefinition = "TEXT")
     private String content;
 
-    @Column(nullable = false)
-    private String conversationId;
-
     @Enumerated
-    private Enum<Role> role;
+    private Role role;
 
     @ManyToOne
     @JoinColumn(name = "conversation_id")

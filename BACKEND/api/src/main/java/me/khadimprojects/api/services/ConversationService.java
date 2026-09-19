@@ -39,7 +39,7 @@ public class ConversationService {
         String globalConversationId = null;
 
         // Create a conversation
-        if (conversationId.isEmpty()) {
+        if (conversationId == null || conversationId.isEmpty()) {
 
             // Generate a new conversation id
             String id = generateConversationId();
@@ -50,7 +50,6 @@ public class ConversationService {
                     .build();
 
             Message message = Message.builder()
-                    .conversationId(id)
                     .conversation(conversation)
                     .content(content)
                     .role(Role.USER)
@@ -65,8 +64,10 @@ public class ConversationService {
 
         } else {
             // Save the message if the conversation id already exist
+            Conversation existingConversation = conversationRepository.findById(conversationId)
+                    .orElseThrow(() -> new RuntimeException("Conversation not found"));
             messageRepository.save(Message.builder()
-                            .conversationId(conversationId)
+                            .conversation(existingConversation)
                             .role(Role.USER)
                             .content(content)
                     .build());
@@ -76,7 +77,7 @@ public class ConversationService {
         globalConversationId = globalConversationId != null ? globalConversationId : conversationId;
 
         // Retrieve history
-        List<Message> history = messageRepository.findAllByConversationId(
+        List<Message> history = messageRepository.findAllByConversation_Id(
                 globalConversationId, PageRequest.of(0, MAX_MESSAGES, Sort.by(Sort.Direction.DESC, "id"))
         ).reversed();
 
@@ -90,9 +91,11 @@ public class ConversationService {
         AiMessage aiMessage = chatModel.chat(context).aiMessage();
 
         // Save that response into the database
+        Conversation currentConversation = conversationRepository.findById(globalConversationId)
+                .orElseThrow(() -> new RuntimeException("Conversation not found"));
         messageRepository.save(Message.builder()
                 .role(Role.AGENT)
-                .conversationId(globalConversationId)
+                .conversation(currentConversation)
                 .content(aiMessage.text())
                 .build()
         );
@@ -105,23 +108,6 @@ public class ConversationService {
     // Generate a conversationId
     private String generateConversationId() {
         return UUID.randomUUID().toString();
-    }
-
-    // Parse a conversation dto into a conversation entity
-    private Conversation toConversation(ConversationRequest request) {
-        Optional<Conversation> conversationHistory = conversationRepository.findById(request.conversationId());
-        if (conversationHistory.isPresent()){
-            Message message = Message.builder()
-                    .conversationId(conversationHistory.get().getId())
-                    .content(request.content())
-                    .build();
-
-            return Conversation.builder()
-                    .id(request.conversationId())
-                    .messages(List.of(message))
-                    .build();
-        }
-        throw new RuntimeException("Unable to find that conversation");
     }
 
     // Parse the response into a conversation reponse dto
